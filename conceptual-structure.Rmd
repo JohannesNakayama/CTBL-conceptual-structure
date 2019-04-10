@@ -1,0 +1,103 @@
+---
+title: Scientometric Analysis
+author: "Johannes Nakayama"
+date: "09 April 2019"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+
+knitr::opts_chunk$set(echo = TRUE)
+
+# load libraries ----
+library(bibliometrix)
+library(knitr)
+library(tidyverse)
+
+```
+
+```{r prepare-data, include=FALSE, eval=FALSE}
+
+# prepare data ----
+raw_file <- readFiles(here::here("data", "LA-dashboards-infovis.bib"))  # load raw file
+df       <- convert2df(raw_file, dbsource = "scopus", format = "bibtex")  # convert to data frame
+results  <- biblioAnalysis(df, sep = ";")  # result object
+
+```
+
+12 results were removed because of faulty titles and author = NA. All of them were cited 0 times. 
+
+```{r inspection, eval=FALSE}
+
+# summary of the data ----
+summary(object = results, k = 10, pause = FALSE)
+
+```
+
+```{r cited-references-analysis}
+
+# build ----
+CR_article <- citations(df, field = "article", sep = ";")  # most cited articles
+CR_author  <- citations(df, field = "author", sep = ";")  # most cited authors
+CR_local   <- localCitations(df, sep = ";")  # most locally cited articles / authors
+
+# output ----
+cbind(CR_article$Cited[1:10])  # most cited articles
+cbind(CR_author$Cited[1:100])  # most cited authors
+CR_local$Papers[1:10, ]  # most locally cited articles
+CR_local$Authors[1:100, ]  # most locally cited authors
+
+```
+
+To obtain vosviewer, visit http://www.vosviewer.com/download and save the program files into the folder vosviewer.
+
+```{r author-collaboration}
+
+# authors collaboration ----
+author_coll <- biblioNetwork(df, analysis = "collaboration", network = "authors", sep = ";")
+
+aut_coll_net <- networkPlot(
+  author_coll,  
+  normalize = "jaccard", 
+  weighted = NULL, 
+  n = 1000, 
+  Title = "Author Collaboration", 
+  type = "vosviewer",
+  vos.path = here::here("vosviewer", "VOSviewer_1.6.10_jar"),
+  alpha = 0.8,
+  size = 3,
+  edges.min = 0,
+  size.cex = TRUE,
+  labelsize = 0.8,
+  label.cex = FALSE,
+  curved = TRUE
+)
+
+```
+
+```{r authors-bibliographic-coupling}
+
+# authors' coupling ----
+author_coup <- biblioNetwork(df, analysis = "coupling", network = "authors", sep = ";")
+
+aut_coup_net <- networkPlot(
+  author_coup,  
+  normalize = "jaccard", 
+  weighted = NULL, 
+  n = 1000, 
+  Title = "Author's Coupling", 
+  type = "vosviewer",
+  vos.path = here::here("vosviewer", "VOSviewer_1.6.10_jar"),
+  alpha = 0.3,
+  size = 3,
+  # edges.min = 15,
+  size.cex = TRUE,
+  remove.multiple = TRUE,
+  labelsize = 0.8,
+  label.n = 10,
+  label.cex = FALSE
+)
+
+```
+
+
